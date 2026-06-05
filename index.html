@@ -405,16 +405,27 @@ let calRef=new Date();
 let projFilter='__all__';
 let hideDone=false;
 
+// 저장소: 일반 웹브라우저(localStorage) 우선, 없으면 Claude 앱 저장소 사용
+const LS_OK=(function(){try{const k='__t__';localStorage.setItem(k,'1');localStorage.removeItem(k);return true;}catch(e){return false;}})();
+async function storeGet(key){
+  if(LS_OK){const v=localStorage.getItem(key);return v!==null?{value:v}:null;}
+  try{return await window.storage.get(key);}catch(e){return null;}
+}
+async function storeSet(key,val){
+  if(LS_OK){localStorage.setItem(key,val);return;}
+  try{await window.storage.set(key,val);}catch(e){console.error(e);}
+}
+
 async function load(){
-  try{const r=await window.storage.get('assistant:tasks');if(r&&r.value)tasks=JSON.parse(r.value);}catch(e){tasks=[];}
-  try{const r=await window.storage.get('assistant:projects');if(r&&r.value)projects=JSON.parse(r.value);}catch(e){projects=['일반'];}
-  try{const r=await window.storage.get('assistant:consults');if(r&&r.value)consults=JSON.parse(r.value);}catch(e){consults=[];}
+  try{const r=await storeGet('assistant:tasks');if(r&&r.value)tasks=JSON.parse(r.value);}catch(e){tasks=[];}
+  try{const r=await storeGet('assistant:projects');if(r&&r.value)projects=JSON.parse(r.value);}catch(e){projects=['일반'];}
+  try{const r=await storeGet('assistant:consults');if(r&&r.value)consults=JSON.parse(r.value);}catch(e){consults=[];}
   if(!projects.length)projects=['일반'];
   tasks.forEach(t=>{if(!t.repeat)t.repeat='none';if(t.note===undefined)t.note='';if(t.type===undefined)t.type='task';if(t.time===undefined)t.time='';if(t.end===undefined)t.end='';});
 }
-async function saveTasks(){try{await window.storage.set('assistant:tasks',JSON.stringify(tasks));}catch(e){console.error(e);}}
-async function saveProjects(){try{await window.storage.set('assistant:projects',JSON.stringify(projects));}catch(e){console.error(e);}}
-async function saveConsults(){try{await window.storage.set('assistant:consults',JSON.stringify(consults));}catch(e){console.error(e);}}
+async function saveTasks(){await storeSet('assistant:tasks',JSON.stringify(tasks));}
+async function saveProjects(){await storeSet('assistant:projects',JSON.stringify(projects));}
+async function saveConsults(){await storeSet('assistant:consults',JSON.stringify(consults));}
 
 function today0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
