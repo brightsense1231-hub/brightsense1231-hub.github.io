@@ -627,7 +627,14 @@ function inFilter(t){
 function fTasks(){return tasks.filter(inFilter);}
 function renderFilterBar(){
   const bar=document.getElementById('filterBar');
-  const used=projects.filter(p=>p==='일반'?tasks.some(t=>t.proj==='일반'):tasks.some(t=>t.proj===p));
+  // 할 일·일정·상담 중 하나라도 있는 프로젝트를 모두 포함
+  const usedSet=new Set();
+  tasks.forEach(t=>usedSet.add(t.proj||'일반'));
+  consults.forEach(c=>usedSet.add(c.proj||'일반'));
+  // projects 목록 순서 유지 + 목록에 없는 것도 뒤에 추가
+  const used=[];
+  projects.forEach(p=>{if(usedSet.has(p))used.push(p);});
+  usedSet.forEach(p=>{if(!used.includes(p))used.push(p);});
   if(projFilter!=='__all__'&&!used.includes(projFilter))projFilter='__all__';
   let html='<span class="flabel">프로젝트:</span>';
   html+=`<button class="fchip ${projFilter==='__all__'?'on':''}" data-filter="__all__">전체</button>`;
